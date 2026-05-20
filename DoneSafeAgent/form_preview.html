@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoneSafe Profile Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN for elegant iconography -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Modern scrollbar aesthetics for the form container */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        /* Style support for contenteditable rich text area placeholder */
+        .editor:empty:before {
+            content: attr(data-placeholder);
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-[#f8fafc] font-sans antialiased min-h-screen p-4 flex items-center justify-center relative overflow-x-hidden">
+
+    <!-- Custom Floating Toast Notification System (Replaces native browser alerts) -->
+    <div id="toastNotification" class="fixed top-4 right-4 z-50 transform translate-x-96 opacity-0 transition-all duration-300 max-w-sm w-full p-4 rounded-lg shadow-2xl border flex items-start gap-3">
+        <div id="toastIcon" class="text-lg mt-0.5"></div>
+        <div>
+            <h4 id="toastTitle" class="font-bold text-sm"></h4>
+            <p id="toastMessage" class="text-xs text-[#cbd5e1] mt-0.5"></p>
+        </div>
+    </div>
+
+    <div class="w-full max-w-2xl bg-[#1e293b] border border-[#334155] rounded-xl shadow-2xl overflow-hidden">
+        <!-- Header status banner -->
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-500 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved"></i> Safety Records - Profile Management
+                    </h1>
+                    <p class="text-emerald-100 text-xs mt-1">DoneSafe Safety Ingestion System (A2UI Interactive)</p>
+                </div>
+                <span class="bg-emerald-950/40 text-emerald-300 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border border-emerald-500/30">
+                    Live Session
+                </span>
+            </div>
+        </div>
+
+        <!-- Interactive Profile form -->
+        <form id="doneSafeForm" class="p-6 space-y-6" onsubmit="event.preventDefault();">
+            <!-- Name & Job ID Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Name -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2" for="name">
+                        Full Name <span class="text-emerald-400">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-[#64748b]">
+                            <i class="fa-regular fa-user"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            required 
+                            placeholder="Enter full name" 
+                            class="w-full pl-10 pr-4 py-2.5 bg-[#0f172a] border border-[#334155] rounded-lg text-white placeholder-[#475569] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm"
+                        >
+                    </div>
+                </div>
+
+                <!-- Job ID -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2" for="job_id">
+                        Job ID <span class="text-emerald-400">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-[#64748b]">
+                            <i class="fa-solid fa-id-badge"></i>
+                        </span>
+                        <input 
+                            type="number" 
+                            id="job_id" 
+                            name="job_id" 
+                            required 
+                            placeholder="Enter assigned numerical Job ID" 
+                            class="w-full pl-10 pr-4 py-2.5 bg-[#0f172a] border border-[#334155] rounded-lg text-white placeholder-[#475569] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Type Selector (RadioButtonGroup representation) -->
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2">
+                    Employment Type
+                </label>
+                <div class="grid grid-cols-3 gap-3">
+                    <label class="relative flex items-center justify-center p-3 rounded-lg border border-[#334155] bg-[#0f172a] cursor-pointer hover:bg-[#131f35] transition-all group">
+                        <input type="radio" name="type" value="Employee" checked class="sr-only peer">
+                        <span class="text-sm font-medium text-[#cbd5e1] peer-checked:text-emerald-400 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-circle-user mr-1.5"></i> Employee
+                        </span>
+                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-emerald-500 rounded-lg pointer-events-none transition-all"></div>
+                    </label>
+
+                    <label class="relative flex items-center justify-center p-3 rounded-lg border border-[#334155] bg-[#0f172a] cursor-pointer hover:bg-[#131f35] transition-all group">
+                        <input type="radio" name="type" value="Contractor" class="sr-only peer">
+                        <span class="text-sm font-medium text-[#cbd5e1] peer-checked:text-emerald-400 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-file-contract mr-1.5"></i> Contractor
+                        </span>
+                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-emerald-500 rounded-lg pointer-events-none transition-all"></div>
+                    </label>
+
+                    <label class="relative flex items-center justify-center p-3 rounded-lg border border-[#334155] bg-[#0f172a] cursor-pointer hover:bg-[#131f35] transition-all group">
+                        <input type="radio" name="type" value="Other" class="sr-only peer">
+                        <span class="text-sm font-medium text-[#cbd5e1] peer-checked:text-emerald-400 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-ellipsis mr-1.5"></i> Other
+                        </span>
+                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-emerald-500 rounded-lg pointer-events-none transition-all"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Department & Specialised Skills Dropdowns -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Department - SinglePicklist -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2" for="department">
+                        Department
+                    </label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-[#64748b]">
+                            <i class="fa-solid fa-building"></i>
+                        </span>
+                        <select 
+                            id="department" 
+                            name="department" 
+                            class="w-full pl-10 pr-10 py-2.5 bg-[#0f172a] border border-[#334155] rounded-lg text-white appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm"
+                        >
+                            <option value="" disabled selected>Select Department</option>
+                            <option value="Safety">Safety</option>
+                            <option value="eCommerce">eCommerce</option>
+                            <option value="People Services">People Services</option>
+                        </select>
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[#64748b]">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Specialised Skills - MultiPicklist drop-down block -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2">
+                        Specialised Skills
+                    </label>
+                    <div class="relative">
+                        <button 
+                            type="button" 
+                            id="skillsDropdownButton" 
+                            class="w-full pl-10 pr-10 py-2.5 bg-[#0f172a] border border-[#334155] rounded-lg text-left text-sm text-[#cbd5e1] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all flex items-center justify-between"
+                            onclick="toggleSkillsDropdown()"
+                        >
+                            <span id="skillsPlaceholder"><i class="fa-solid fa-toolbox mr-1.5 text-[#64748b]"></i> Select applicable skills</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-[#64748b]"></i>
+                        </button>
+                        
+                        <!-- Dropdown choice panel -->
+                        <div id="skillsDropdown" class="hidden absolute left-0 right-0 mt-1 bg-[#1e293b] border border-[#334155] rounded-lg shadow-xl z-10 max-h-48 overflow-y-auto p-2 space-y-1">
+                            <label class="flex items-center gap-2 p-2 hover:bg-[#0f172a] rounded cursor-pointer text-sm">
+                                <input type="checkbox" name="specialised_skills" value="Stock Management" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#0f172a] border-[#475569] h-4 w-4" onchange="updateSkillsUI()"> Stock Management
+                            </label>
+                            <label class="flex items-center gap-2 p-2 hover:bg-[#0f172a] rounded cursor-pointer text-sm">
+                                <input type="checkbox" name="specialised_skills" value="Customer Service" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#0f172a] border-[#475569] h-4 w-4" onchange="updateSkillsUI()"> Customer Service
+                            </label>
+                            <label class="flex items-center gap-2 p-2 hover:bg-[#0f172a] rounded cursor-pointer text-sm">
+                                <input type="checkbox" name="specialised_skills" value="Online Fulfillment" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#0f172a] border-[#475569] h-4 w-4" onchange="updateSkillsUI()"> Online Fulfillment
+                            </label>
+                            <label class="flex items-center gap-2 p-2 hover:bg-[#0f172a] rounded cursor-pointer text-sm">
+                                <input type="checkbox" name="specialised_skills" value="Safe Manual Handling" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#0f172a] border-[#475569] h-4 w-4" onchange="updateSkillsUI()"> Safe Manual Handling
+                            </label>
+                            <label class="flex items-center gap-2 p-2 hover:bg-[#0f172a] rounded cursor-pointer text-sm">
+                                <input type="checkbox" name="specialised_skills" value="Food Safety Compliance" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#0f172a] border-[#475569] h-4 w-4" onchange="updateSkillsUI()"> Food Safety Compliance
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Grid layout (CheckboxGroup representation) -->
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2">
+                    Designated Location(s)
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">VIC</span>
+                        <input type="checkbox" name="location" value="VIC" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">NSW</span>
+                        <input type="checkbox" name="location" value="NSW" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">SA</span>
+                        <input type="checkbox" name="location" value="SA" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">TAS</span>
+                        <input type="checkbox" name="location" value="TAS" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">WA</span>
+                        <input type="checkbox" name="location" value="WA" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">ACT</span>
+                        <input type="checkbox" name="location" value="ACT" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">QLD</span>
+                        <input type="checkbox" name="location" value="QLD" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                    <label class="flex items-center justify-between p-2.5 bg-[#0f172a] border border-[#334155] rounded-lg cursor-pointer hover:bg-[#131f35] transition-all text-sm group">
+                        <span class="text-[#cbd5e1] group-hover:text-white transition-all font-medium">NT</span>
+                        <input type="checkbox" name="location" value="NT" class="rounded text-emerald-500 focus:ring-0 focus:ring-offset-0 bg-[#1e293b] border-[#475569] h-4 w-4">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Profile Snapshot text editor (RichTextArea representation) -->
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-2">
+                    Profile Snapshot
+                </label>
+                <div class="border border-[#334155] rounded-lg bg-[#0f172a] overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
+                    <!-- Ribbon toolbar for styling options -->
+                    <div class="flex items-center gap-1.5 p-2 bg-[#1e293b] border-b border-[#334155] text-[#cbd5e1]">
+                        <button type="button" class="h-8 w-8 hover:bg-[#0f172a] hover:text-white rounded flex items-center justify-center transition-all text-sm" onclick="formatDoc('bold')" title="Bold">
+                            <i class="fa-solid fa-bold"></i>
+                        </button>
+                        <button type="button" class="h-8 w-8 hover:bg-[#0f172a] hover:text-white rounded flex items-center justify-center transition-all text-sm" onclick="formatDoc('italic')" title="Italic">
+                            <i class="fa-solid fa-italic"></i>
+                        </button>
+                        <button type="button" class="h-8 w-8 hover:bg-[#0f172a] hover:text-white rounded flex items-center justify-center transition-all text-sm" onclick="formatDoc('underline')" title="Underline">
+                            <i class="fa-solid fa-underline"></i>
+                        </button>
+                        <div class="h-5 w-[1px] bg-[#334155] mx-1"></div>
+                        <button type="button" class="h-8 w-8 hover:bg-[#0f172a] hover:text-white rounded flex items-center justify-center transition-all text-sm" onclick="formatDoc('insertUnorderedList')" title="Bullet List">
+                            <i class="fa-solid fa-list-ul"></i>
+                        </button>
+                        <button type="button" class="h-8 w-8 hover:bg-[#0f172a] hover:text-white rounded flex items-center justify-center transition-all text-sm" onclick="formatDoc('insertOrderedList')" title="Numbered List">
+                            <i class="fa-solid fa-list-ol"></i>
+                        </button>
+                    </div>
+
+                    <!-- Sandbox editable element -->
+                    <div 
+                        id="richEditor" 
+                        contenteditable="true" 
+                        data-placeholder="Type safety profile overview, incident histories, or background details here..." 
+                        class="editor p-4 min-h-[120px] max-h-[220px] overflow-y-auto text-white text-sm focus:outline-none"
+                    ></div>
+                </div>
+            </div>
+
+            <!-- Footer submission actions -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#334155]">
+                <button 
+                    type="button" 
+                    onclick="clearFormFields()" 
+                    class="px-5 py-2.5 bg-red-600/90 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition-all shadow-md active:scale-95 flex items-center gap-2"
+                >
+                    <i class="fa-solid fa-trash-can"></i> Clear All Fields
+                </button>
+                <button 
+                    type="button" 
+                    onclick="submitFormState()" 
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition-all shadow-md active:scale-95 flex items-center gap-2"
+                >
+                    <i class="fa-solid fa-circle-check"></i> Submit & Record Data
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- DoneSafe Ingestion confirmation dialog overlay -->
+    <div id="submitModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1e293b] border border-[#334155] rounded-xl max-w-md w-full p-6 text-center shadow-2xl relative">
+            <div class="h-14 w-14 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+                <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">DoneSafe Ingestion Completed</h3>
+            <p class="text-[#94a3b8] text-sm mb-6">Your data submission was transmitted and cataloged successfully into the organization database log.</p>
+            <button 
+                type="button" 
+                onclick="closeModal()" 
+                class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition-all"
+            >
+                Return to Conversation
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Notification rendering function
+        function showNotification(title, msg, type = 'error') {
+            const banner = document.getElementById('toastNotification');
+            const icon = document.getElementById('toastIcon');
+            const bannerTitle = document.getElementById('toastTitle');
+            const bannerMsg = document.getElementById('toastMessage');
+
+            if (type === 'success') {
+                banner.className = "fixed top-4 right-4 z-50 transform translate-x-0 opacity-100 transition-all duration-300 max-w-sm w-full p-4 rounded-lg shadow-2xl border bg-[#064e3b] border-emerald-500 text-emerald-200 flex items-start gap-3";
+                icon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+            } else {
+                banner.className = "fixed top-4 right-4 z-50 transform translate-x-0 opacity-100 transition-all duration-300 max-w-sm w-full p-4 rounded-lg shadow-2xl border bg-[#7f1d1d] border-red-500 text-red-200 flex items-start gap-3";
+                icon.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+            }
+
+            bannerTitle.innerText = title;
+            bannerMsg.innerText = msg;
+
+            // Dismiss the notification box after 4 seconds
+            setTimeout(() => {
+                banner.classList.add('translate-x-96', 'opacity-0');
+            }, 4000);
+        }
+
+        // Skills drop-down interactions
+        function toggleSkillsDropdown() {
+            const dropdown = document.getElementById('skillsDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            const button = document.getElementById('skillsDropdownButton');
+            const dropdown = document.getElementById('skillsDropdown');
+            if (button && dropdown && !button.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Dynamic multi-select tag renderer
+        function updateSkillsUI() {
+            const checkedBoxes = document.querySelectorAll('input[name="specialised_skills"]:checked');
+            const placeholder = document.getElementById('skillsPlaceholder');
+            
+            if (checkedBoxes.length === 0) {
+                placeholder.innerHTML = `<i class="fa-solid fa-toolbox mr-1.5 text-[#64748b]"></i> Select applicable skills`;
+                return;
+            }
+
+            const tags = Array.from(checkedBoxes).map(cb => 
+                `<span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2 py-0.5 rounded border border-emerald-500/30">${cb.value}</span>`
+            ).join(' ');
+
+            placeholder.innerHTML = `<div class="flex flex-wrap gap-1.5">${tags}</div>`;
+        }
+
+        // Simple executive commands for the editable snapshot
+        function formatDoc(cmd, val = null) {
+            document.execCommand(cmd, false, val);
+            document.getElementById('richEditor').focus();
+        }
+
+        // Reset all custom and native fields safely
+        function clearFormFields() {
+            document.getElementById('doneSafeForm').reset();
+            document.getElementById('richEditor').innerHTML = '';
+            
+            const checkedBoxes = document.querySelectorAll('input[name="specialised_skills"]:checked');
+            checkedBoxes.forEach(cb => cb.checked = false);
+            updateSkillsUI();
+            showNotification("Form State Reset", "All input fields and editor snapshot have been cleared.", "success");
+        }
+
+        // Transmit collected state payload to the hosting agent backend
+        function submitFormState() {
+            const name = document.getElementById('name').value;
+            const jobId = document.getElementById('job_id').value;
+            
+            if (!name || !jobId) {
+                showNotification("Mandatory Fields Missing", "Please input both Name and Job ID parameters to register the record.", "error");
+                return;
+            }
+
+            const selectedType = document.querySelector('input[name="type"]:checked').value;
+            const selectedDept = document.getElementById('department').value;
+            const skills = Array.from(document.querySelectorAll('input[name="specialised_skills"]:checked')).map(cb => cb.value);
+            const locations = Array.from(document.querySelectorAll('input[name="location"]:checked')).map(cb => cb.value);
+            const snapshot = document.getElementById('richEditor').innerHTML;
+
+            const payload = {
+                name: name,
+                job_id: parseInt(jobId),
+                type: selectedType,
+                department: selectedDept || "None Selected",
+                specialised_skills: skills,
+                location: locations,
+                profile_snapshot: snapshot
+            };
+
+            // Post API integration
+            fetch('/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Network connection dropped");
+                return res.json();
+            })
+            .then(data => {
+                if (data.status === 'OK') {
+                    // postMessage interface support for parent frameworks
+                    if (window.parent) {
+                        window.parent.postMessage({
+                            type: 'donesafe_submission',
+                            payload: payload
+                        }, '*');
+                    }
+                    document.getElementById('submitModal').classList.remove('hidden');
+                } else {
+                    showNotification("Submission Error", data.message, "error");
+                }
+            })
+            .catch(err => {
+                console.error("Payload transmission failed:", err);
+                showNotification("Offline Interface Error", "Submission failed. The companion web daemon is offline.", "error");
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('submitModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
