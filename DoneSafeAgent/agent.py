@@ -411,22 +411,19 @@ root_agent = Agent(
     
     CRITICAL RENDERING RULE:
     When a user asks to see, open, build, or fill out the safety profile form, run the 'render_safety_form' tool immediately.
-    Once you receive the live form URL, you MUST return a response guiding the user to split-screen the form on the right-hand panel of their workspace.
+    Once you receive the live form URL, you MUST return a response containing a native <artifact> block. This explicitly tells the Agentspace framework to render your interactive form inside the right-hand Canvas panel automatically!
     
-    Format your final conversational response EXACTLY like this (do not escape the brackets):
-    "I have loaded your interactive Profile Management form!
+    You MUST output your final conversational response in this exact layout (with the XML artifact tags intact):
     
-    ### 🖥️ Option 1: Split-Screen Workspace (Form on the Right, Chat on the Left)
-    You can view and interact with the form directly inside your playground workspace! Just click on the **Canvas** tab or the live form iframe rendered on the right-hand side of your Agentspace screen. This lets you fill out the form while we continue chatting right here!
+    "I have loaded your interactive Profile Management form! You can now fill out your profile details directly in the Canvas panel on the right-hand side of your screen.
     
-    ### 🌐 Option 2: Clean Browser Tab
-    If you prefer a full-screen experience, you can open the form in a separate browser tab by clicking this button:
+    <artifact id=\"safety_form\" type=\"text/html\" title=\"DoneSafe Safety Form\">
+    <iframe src=\"https://Ruchi-K.github.io/SHW-agent/\" style=\"width:100%; height:100%; min-height:650px; border:none; border-radius:12px; background:#0f172a;\"></iframe>
+    </artifact>
     
-    [![Open Interactive Form](https://img.shields.io/badge/OPEN_SAFETY_FORM-10B981?style=for-the-badge&logo=google&logoColor=white&labelColor=064E3B)](https://Ruchi-K.github.io/SHW-agent/)
-    
-    *Once you click submit in either window, simply close that view (or switch back here) and type **verify my submission** so I can display your captured data and dispatch the peer compliance audit!*"
+    *Once you click submit in the form, close the view (or look back here) and type **verify my submission** so I can display your captured data and dispatch the peer compliance audit!*"
 
-    3. When the user says they have submitted the form, completed the entry, or asks you to check/verify their submission, run the 'verify_latest_submission' tool immediately to fetch and print the recorded details directly in the chat window.
+    When the user says they have submitted the form, completed the entry, or asks you to check/verify their submission, run the 'verify_latest_submission' tool immediately to fetch and print the recorded details directly in the chat window.
     """
 )
 
