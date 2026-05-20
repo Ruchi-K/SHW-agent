@@ -1,9 +1,8 @@
 """
 Safety Records Agent (DoneSafe) Validation Harness.
-Implements a concurrent background HTTP daemon thread serving form_preview.html,
-and hosts an agent setup that intercepts form submission inputs for logging.
-Natively implements both H2A (Human UI parsing) and A2A (Agent-to-Agent task delegation)
-using direct Gemini LLM execution loops to simulate cross-agent verification.
+Implements a concurrent background HTTP daemon thread serving index.html (fallback),
+hosts the core ADK agent loop, and provides native web-page rendering
+delivery alongside direct A2A peer task delegation routines.
 """
 
 import os
@@ -42,6 +41,7 @@ GEMINI_RETRY_OPTIONS = types.HttpRetryOptions(
 # Filepath for persistent form state exchange between backend thread and tool execution
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SUBMISSION_FILE = os.path.join(BASE_DIR, "latest_submission.json")
+SCHEMA_FILE = os.path.join(BASE_DIR, "ui_schema.json")
 
 # -----------------------------------------------------------------------------
 # ✨ Gemini API Direct Integration Handler (Exponential Backoff Implementation)
@@ -95,7 +95,7 @@ COMPANION_PORT = 8089  # Static port for companion web host
 
 class CompanionHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """
-    HTTP handler serving form_preview.html and appending post submissions
+    HTTP handler serving index.html / form_preview.html and appending post submissions
     directly into the logging pipeline and writing to a persistent JSON file.
     """
     def log_message(self, format, *args):
@@ -110,7 +110,10 @@ class CompanionHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        file_path = os.path.join(BASE_DIR, "form_preview.html")
+        # Fallback path checking for local development convenience
+        file_path = os.path.join(BASE_DIR, "index.html")
+        if not os.path.exists(file_path):
+            file_path = os.path.join(BASE_DIR, "form_preview.html")
 
         if os.path.exists(file_path):
             self.send_response(200)
@@ -122,10 +125,9 @@ class CompanionHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
-            self.wfile.write(b"form_preview.html not found in DoneSafeAgent folder.")
+            self.wfile.write(b"Interactive form asset template missing from directory.")
 
     def do_POST(self):
-        # Enable CORS on incoming POST requests from the port 8000 iframe
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -266,6 +268,11 @@ def build_gemini_model(
             types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
             types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
         ]
+
+    logger.info(
+        "[MODEL INIT] model=%s temp=%s top_p=%s max_tokens=%s thinking=%s tools=%s",
+        model_path, temperature, top_p, output_tokens, thinking_level, bool(tools),
+    )
     
     return Gemini(
         model=model_path,
@@ -274,22 +281,22 @@ def build_gemini_model(
     )
 
 # -----------------------------------------------------------------------------
-# A2UI Catalog Function Tools - Live Configuration Linked
+# Web Page Rendering Function Tools
 # -----------------------------------------------------------------------------
 
 def render_safety_form() -> str:
     """
     Returns your public secure GitHub Pages URL.
-    In the hosted Agentspace, the platform will catch this secure URL and automatically 
-    render your form inside the interactive Canvas panel on the right-hand side!
+    This secure URL will be parsed by the Agentspace framework to render your
+    interactive form inside the right-hand Canvas panel!
     """
     return "https://Ruchi-K.github.io/SHW-agent/"
 
 
 def verify_latest_submission() -> str:
     """
-    H2A ⇄ A2A Pipeline: Reads local submission, logs, and automatically 
-    dispatches a peer compliance task to a simulated Store Compliance Auditor Agent.
+    Reads the cached form state submitted by the user, and initiates
+    an autonomous A2A delegation review with the Store Compliance Auditor Agent.
     """
     if not os.path.exists(SUBMISSION_FILE):
         return (
@@ -366,7 +373,8 @@ Your safety profile has been fully cataloged inside the active conversation wind
 
 def process_safety_record(form_state_json: str) -> str:
     """
-    Allows fallback handling of standard raw JSON inputs in chat.
+    Saves the edited profile form state data to the safety records log, 
+    and returns a clean markdown table playback response.
     """
     try:
         if isinstance(form_state_json, dict):
@@ -386,9 +394,25 @@ def process_safety_record(form_state_json: str) -> str:
         "timestamp": timestamp,
         "record_payload": data
     }
-    logger.info("A2UI DONE-SAFE MANUAL RECORD INGESTION: %s", json.dumps(log_entry))
+    logger.info("A2UI DONE-SAFE RECORD INGESTION: %s", json.dumps(log_entry))
 
-    return f"Manual record logged successfully at {timestamp}"
+    return f"""
+### [✓] DoneSafe Safety Record Logged Successfully
+**Timestamp:** `{timestamp}`  
+**Managed By:** `Safety Records Agent (DoneSafe)`
+
+| Safety Record Parameter | Ingested Value Configuration |
+| :--- | :--- |
+| **Name** | {data.get('name')} |
+| **Job ID** | {data.get('job_id')} |
+| **Type** | {data.get('type', 'Employee')} |
+| **Department** | {data.get('department', 'None Selected')} |
+| **Specialised Skills** | {", ".join(data.get('specialised_skills', [])) or 'None Registered'} |
+| **Assigned Location(s)** | {", ".join(data.get('location', [])) or 'None Registered'} |
+
+#### Profile Snapshot (Rich Text Content Captured)
+{data.get('profile_snapshot', '*(No content registered)*')}
+"""
 
 # -----------------------------------------------------------------------------
 # Agent Registration Pipeline Block
@@ -411,17 +435,20 @@ root_agent = Agent(
     
     CRITICAL RENDERING RULE:
     When a user asks to see, open, build, or fill out the safety profile form, run the 'render_safety_form' tool immediately.
-    Once you receive the live form URL, you MUST return a response containing a native <artifact> block. This explicitly tells the Agentspace framework to render your interactive form inside the right-hand Canvas panel automatically!
+    Once you receive the live form URL, you MUST return a response guiding the user to split-screen the form on the right-hand panel of their workspace.
     
-    You MUST output your final conversational response in this exact layout (with the XML artifact tags intact):
+    Format your final conversational response EXACTLY like this (do not escape the brackets):
+    "I have loaded your interactive Profile Management form!
     
-    "I have loaded your interactive Profile Management form! You can now fill out your profile details directly in the Canvas panel on the right-hand side of your screen.
+    ### 🖥️ Option 1: Split-Screen Workspace (Form on the Right, Chat on the Left)
+    You can view and interact with the form directly inside your playground workspace! Just click on the **Canvas** tab or the live form iframe rendered on the right-hand side of your Agentspace screen. This lets you fill out the form while we continue chatting right here!
     
-    <artifact id=\"safety_form\" type=\"text/html\" title=\"DoneSafe Safety Form\">
-    <iframe src=\"https://Ruchi-K.github.io/SHW-agent/\" style=\"width:100%; height:100%; min-height:650px; border:none; border-radius:12px; background:#0f172a;\"></iframe>
-    </artifact>
+    ### 🌐 Option 2: Clean Browser Tab
+    If you prefer a full-screen experience, you can open the form in a separate browser tab by clicking this button:
     
-    *Once you click submit in the form, close the view (or look back here) and type **verify my submission** so I can display your captured data and dispatch the peer compliance audit!*"
+    [![Open Interactive Form](https://img.shields.io/badge/OPEN_SAFETY_FORM-10B981?style=for-the-badge&logo=google&logoColor=white&labelColor=064E3B)](https://Ruchi-K.github.io/SHW-agent/)
+    
+    *Once you click submit in either window, simply close that view (or switch back here) and type **verify my submission** so I can display your captured data and dispatch the peer compliance audit!*"
 
     When the user says they have submitted the form, completed the entry, or asks you to check/verify their submission, run the 'verify_latest_submission' tool immediately to fetch and print the recorded details directly in the chat window.
     """
